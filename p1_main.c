@@ -9,20 +9,23 @@
 #include "p1_globals.h"
 
 #define FILE_NAME_SIZE 32
-#define FILE_NAME_FMT "%31s"
 
-struct Ordered_container *library_id;
-struct Ordered_container *library_title;
-struct Ordered_container *catalog;
+static struct Ordered_container *library_id;
+static struct Ordered_container *library_title;
+static struct Ordered_container *catalog;
 
 int compare_record_id(const void* data_ptr1, const void* data_ptr2);
 int compare_collection_name(const void* data_ptr1, const void* data_ptr2);
 int compare_string_with_record(const void* arg_ptr, const void* data_ptr);
 int compare_id_with_record(const void* arg_ptr, const void* data_ptr);
 int trim_title(char *title);
-void discard_input_remainder(void);
+void handle_invalid_command_error(void);
+int read_check_title(char *title);
+FILE *open_file(const char *mode);
+void read_collection_name(char *collection_name);
+void *find_collection_ptr(void);
+void handle_rA_data_invalid(FILE *fp);
 
-void *check_collection_name(void);
 
 
 int compare_record_id(const void* data_ptr1, const void* data_ptr2)
@@ -36,8 +39,6 @@ int compare_collection_name(const void* data_ptr1, const void* data_ptr2)
     return strcmp(get_Collection_name((struct Collection *)data_ptr1), get_Collection_name((struct Collection *)data_ptr2));
 }
 
-
-
 int compare_id_with_record(const void* arg_ptr, const void* data_ptr)
 {
     return *(int *)arg_ptr - get_Record_ID((struct Record *)data_ptr);
@@ -47,7 +48,6 @@ int compare_name_with_collection(const void* arg_ptr, const void* data_ptr)
 {
     return strcmp((char *) arg_ptr, get_Collection_name((struct Collection *)data_ptr));
 }
-
 
 int check_record_in_collection (void* data_ptr, void* arg_ptr)
 {
@@ -71,7 +71,6 @@ void free_record(void *data_ptr)
     destroy_Record((struct Record *)data_ptr);
 }
 
-
 void OC_destory_collection(void *data_ptr)
 {
     destroy_Collection((struct Collection *)data_ptr);
@@ -85,22 +84,12 @@ void save_collection_item(void* data_ptr, void* arg_ptr)
 void fr(void)
 {
     char title[RECORD_TITLE_SIZE];
-    if(fgets(title, RECORD_TITLE_SIZE, stdin) == NULL) {
-        printf("Could not read a title!\n");
-        discard_input_remainder();
-        return;
-    }
-    if (trim_title(title) == 0) {
-        printf("Could not read a title!\n");
-    }
-    else {
+    if (read_check_title(title) == 1) {
         void *find_item_ptr = OC_find_item_arg(library_title, title, compare_string_with_record);
-        if (find_item_ptr == NULL) {
+        if (find_item_ptr == NULL)
             printf("No record with that title!\n");
-        }
-        else {
+        else
             print_Record(OC_get_data_ptr(find_item_ptr));
-        }
     }
 }
 
@@ -113,9 +102,8 @@ void pr(void)
             printf("No record with that ID!\n");
             discard_input_remainder();
         }
-        else {
+        else
             print_Record(OC_get_data_ptr(find_item_ptr));
-        }
     }
     else {
         printf("Could not read an integer value!\n");
@@ -125,17 +113,13 @@ void pr(void)
 
 void pc(void)
 {
-    char collection_name[COLLECTION_NAME_SIZE];
-    void *find_item_ptr;
-    scanf(COLLECTION_NAME_FMT, collection_name);
-    find_item_ptr = OC_find_item_arg(catalog, collection_name, compare_name_with_collection);
+    void *find_item_ptr = find_collection_ptr();
     if (find_item_ptr == NULL) {
         printf("No collection with that name!\n");
         discard_input_remainder();
     }
-    else {
+    else
         print_Collection(OC_get_data_ptr(find_item_ptr));
-    }
 }
 
 
@@ -177,12 +161,10 @@ void ar(void)
 {
     /* read title is same as fr (try to use function afterwards) */
     char medium[RECORD_MEDIUM_SIZE], title[RECORD_TITLE_SIZE];
-    scanf(RECORD_MEDIUM_FMT, medium);
-    fgets(title, RECORD_TITLE_SIZE, stdin);
-    if (trim_title(title) == 0) {
-        printf("Could not read a title!\n");
-    }
-    else {
+    char fmt_str[20];
+    sprintf(fmt_str, "%%%ds", RECORD_MEDIUM_SIZE-1);
+    scanf(fmt_str, medium);
+    if (read_check_title(title) == 1) {
         void *find_item_ptr = OC_find_item_arg(library_title, &title, compare_string_with_record);
         if (find_item_ptr == NULL) {
             struct Record *new_record = create_Record(medium, title);
@@ -198,10 +180,9 @@ void ar(void)
 
 void ac(void)
 {
-    /* almost same as pc duplicate */
     char collection_name[COLLECTION_NAME_SIZE];
     void *find_item_ptr;
-    scanf(COLLECTION_NAME_FMT, collection_name);
+    read_collection_name(collection_name);
     find_item_ptr = OC_find_item_arg(catalog, collection_name, compare_name_with_collection);
     if (find_item_ptr == NULL) {
         struct Collection *new_collection = create_Collection(collection_name);
@@ -217,10 +198,7 @@ void ac(void)
 void am(void)
 {
     /*duplicate */
-    char collection_name[COLLECTION_NAME_SIZE];
-    void *find_item_ptr;
-    scanf(COLLECTION_NAME_FMT, collection_name);
-    find_item_ptr = OC_find_item_arg(catalog, collection_name, compare_string_with_record);
+    void *find_item_ptr = find_collection_ptr();
     if (find_item_ptr == NULL) {
         printf("No collection with that name!\n");
         discard_input_remainder();
@@ -285,14 +263,7 @@ void mr(void)
 void dr(void)
 {
     char title[RECORD_TITLE_SIZE];
-    if(fgets(title, RECORD_TITLE_SIZE, stdin) == NULL) {
-        printf("Could not read a title!\n");
-        return;
-    }
-    if (trim_title(title) == 0) {
-        printf("Could not read a title!\n");
-    }
-    else {
+    if (read_check_title(title) == 1) {
         void * find_item_ptr = OC_find_item_arg(library_title, title, compare_string_with_record);
         if (find_item_ptr == NULL) {
             printf("No record with that title!\n");
@@ -311,30 +282,25 @@ void dr(void)
     }
 }
 
-/* used the function check_collection_name */
+/* used the function find_collection_ptr */
 void dc(void)
 {
-    void *find_collection_item_ptr = check_collection_name();
-    void *collection_data_ptr;
-    if (find_collection_item_ptr == NULL) {
+    void *find_item_ptr = find_collection_ptr();
+    if (find_item_ptr == NULL) {
         printf("No collection with that name!\n");
         discard_input_remainder();
     }
     else {
-        collection_data_ptr = OC_get_data_ptr(find_collection_item_ptr);
+        void *collection_data_ptr = OC_get_data_ptr(find_item_ptr);
         printf("Collection %s deleted\n", get_Collection_name(collection_data_ptr));
-        OC_delete_item(catalog, find_collection_item_ptr);
+        OC_delete_item(catalog, find_item_ptr);
         destroy_Collection(collection_data_ptr);
     }
 }
 
 void dm(void)
 {
-    /*read collection name duplicate code*/
-    char collection_name[COLLECTION_NAME_SIZE];
-    void *find_item_ptr;
-    scanf(COLLECTION_NAME_FMT, collection_name);
-    find_item_ptr = OC_find_item_arg(catalog, collection_name, compare_name_with_collection);
+    void *find_item_ptr = find_collection_ptr();
     if (find_item_ptr == NULL) {
         printf("No collection with that name!\n");
         discard_input_remainder();
@@ -396,16 +362,10 @@ void cA(void)
 
 void sA(void)
 {
-    FILE *fp;
-    char file_name[FILE_NAME_SIZE];
-    scanf(FILE_NAME_FMT, file_name);
-    if ((fp = fopen(file_name, "w")) == NULL) {
-        printf("Could not open file!\n");
-        discard_input_remainder();
-    }
-    else {
+    FILE *fp = open_file("w");
+    if (fp != NULL) {
         fprintf(fp, "%d\n", OC_get_size(library_title));
-        OC_apply_arg(library_title, save_record_item_full, fp);
+        OC_apply_arg(library_title, save_record_item, fp);
         fprintf(fp, "%d\n", OC_get_size(catalog));
         OC_apply_arg(catalog, save_collection_item, fp);
         fclose(fp);
@@ -417,51 +377,45 @@ void sA(void)
 
 void rA(void)
 {
-    FILE *fp;
-    char file_name[FILE_NAME_SIZE];
-    int num_record, i, num_collection, read_success = 1;
-    scanf(FILE_NAME_FMT, file_name);
-    if ((fp = fopen(file_name, "r")) == NULL) {
-        printf("Could not open file!\n");
-        discard_input_remainder();
+    int num_record, num_collection, i;
+    FILE *fp = open_file("r");
+    if (fp == NULL) {
         return;
     }
+
     cA();
 
     /* remember handle the ID number, remember remove all unvalid data before return */
     if (fscanf(fp, "%d", &num_record) != 1) {
-        printf("Invalid data found in file!\n");
-        discard_input_remainder();
+        handle_rA_data_invalid(fp);
         return;
     }
+    
+
+    
     for (i = 0; i < num_record; i++) {
         struct Record *new_record = load_Record(fp);
-        fprintf(stderr, "%d", i);
         if (new_record == NULL) {
-            read_success = 0;
-            break;
+            handle_rA_data_invalid(fp);
+            return;
         }
         else {
             OC_insert(library_id, new_record);
             OC_insert(library_title, new_record);
         }
     }
-    if (read_success == 0) {
-        printf("Invalid data found in file!\n");
-        discard_input_remainder();
-        fclose(fp);
-        return;
-    }
+
+    
     if (fscanf(fp, "%d", &num_collection) != 1) {
-        printf("Invalid data found in file!\n");
-        discard_input_remainder();
+        handle_rA_data_invalid(fp);
         return;
     }
+    
     for (i = 0; i < num_collection; i++) {
         struct Collection *new_collection = load_Collection(fp, library_title);
+        
         if (new_collection == NULL) {
-            printf("Invalid data found in file!\n");
-            discard_input_remainder();
+            handle_rA_data_invalid(fp);
             return;
         }
         OC_insert(catalog, new_collection);
@@ -469,6 +423,8 @@ void rA(void)
     fclose(fp);
     printf("Data loaded\n");
 }
+
+
 
 void qq(void)
 {
@@ -481,30 +437,16 @@ void qq(void)
     exit(EXIT_SUCCESS);
 }
 
-/*?? Is this useful? */
-void *check_collection_name(void)
-{
-    char collection_name[COLLECTION_NAME_SIZE];
-    scanf(COLLECTION_NAME_FMT, collection_name);
-    return OC_find_item_arg(catalog, collection_name, compare_name_with_collection);
-}
 
 
 int main(void)
 {
     char action, object;
-    const char * const command_invalid = "Unrecognized command!\n";
-    
     library_id = OC_create_container((OC_comp_fp_t) compare_record_id);
     library_title =  OC_create_container((OC_comp_fp_t) compare_record_title);
     catalog = OC_create_container((OC_comp_fp_t) compare_collection_name);
     
     while (1) {
-        /*if ((action = getchar()) != 1 || (object = getchar()) != 1) {
-            printf("%s", command_invalid);
-        }
-         P14 14 don't check eof
-         */
         printf("\nEnter command: ");
         scanf(" %c", &action);
         scanf(" %c", &object);
@@ -515,8 +457,7 @@ int main(void)
                         fr();
                         break;
                     default:
-                        printf("%s", command_invalid);
-                        discard_input_remainder();
+                        handle_invalid_command_error();
                         break;
                 }
                 break;
@@ -538,8 +479,7 @@ int main(void)
                         pa();
                         break;
                     default:
-                        printf("%s", command_invalid);
-                        discard_input_remainder();
+                        handle_invalid_command_error();
                         break;
                 }
                 break;
@@ -555,8 +495,7 @@ int main(void)
                         am();
                         break;
                     default:
-                        printf("%s", command_invalid);
-                        discard_input_remainder();
+                        handle_invalid_command_error();
                         break;
                 }
                 break;
@@ -566,8 +505,7 @@ int main(void)
                         mr();
                         break;
                     default:
-                        printf("%s", command_invalid);
-                        discard_input_remainder();
+                        handle_invalid_command_error();
                         break;
                 }
                 break;
@@ -583,8 +521,7 @@ int main(void)
                         dm();
                         break;
                     default:
-                        printf("%s", command_invalid);
-                        discard_input_remainder();
+                        handle_invalid_command_error();
                         break;
                 }
                 break;
@@ -604,8 +541,7 @@ int main(void)
                         printf("All data deleted\n");
                         break;
                     default:
-                        printf("%s", command_invalid);
-                        discard_input_remainder();
+                        handle_invalid_command_error();
                         break;
                 }
                 break;
@@ -615,8 +551,7 @@ int main(void)
                         sA();
                         break;
                     default:
-                        printf("%s", command_invalid);
-                        discard_input_remainder();
+                        handle_invalid_command_error();
                         break;
                 }
                 break;
@@ -626,8 +561,7 @@ int main(void)
                         rA();
                         break;
                     default:
-                        printf("%s", command_invalid);
-                        discard_input_remainder();
+                        handle_invalid_command_error();
                         break;
                 }
                 break;
@@ -637,13 +571,11 @@ int main(void)
                         qq();
                         break;
                     default:
-                        printf("%s", command_invalid);
-                        discard_input_remainder();
+                        handle_invalid_command_error();
                         break;
                 }
             default:
-                printf("%s", command_invalid);
-                discard_input_remainder();
+                handle_invalid_command_error();
                 break;
         }
     }
@@ -661,22 +593,65 @@ int trim_title(char *title)
             *title_iterator++ = *title++;
             valid = 1;
         }
-        if (*title != '\0') {
+        if (*title != '\0')
             *title_iterator++ = ' ';
-        }
     }
-    if (isspace(*(--title))) {
+    if (isspace(*(--title)) && valid)
         *(title_iterator-1) = '\0';
-    }
-    else {
+    else
         *title_iterator = '\0';
-    }
     return valid;
 }
 
-void discard_input_remainder(void)
+void handle_invalid_command_error(void)
 {
-    while (getchar() != '\n') {
-        ;
+    const char * const command_invalid = "Unrecognized command!\n";
+    printf("%s", command_invalid);
+    discard_input_remainder();
+}
+
+void *find_collection_ptr(void)
+{
+    char collection_name[COLLECTION_NAME_SIZE];
+    read_collection_name(collection_name);
+    return OC_find_item_arg(catalog, collection_name, compare_name_with_collection);
+}
+
+void read_collection_name(char *collection_name)
+{
+    char fmt_str[20];
+    sprintf(fmt_str, "%%%ds", COLLECTION_NAME_SIZE-1);
+    scanf(fmt_str, collection_name);
+}
+
+int read_check_title(char *title)
+{
+    fgets(title, RECORD_TITLE_SIZE, stdin);
+    if (trim_title(title))
+        return 1;
+    else {
+        printf("Could not read a title!\n");
+        return 0;
     }
+}
+
+FILE *open_file(const char *mode)
+{
+    FILE *fp;
+    char file_name[FILE_NAME_SIZE];
+    char fmt_str[20];
+    sprintf(fmt_str, "%%%ds", FILE_NAME_SIZE-1);
+    scanf(fmt_str, file_name);
+    if ((fp = fopen(file_name, mode)) == NULL) {
+        printf("Could not open file!\n");
+        discard_input_remainder();
+    }
+    return fp;
+}
+
+void handle_rA_data_invalid(FILE *fp)
+{
+    printf("Invalid data found in file!\n");
+    fclose(fp);
+    cA();
 }

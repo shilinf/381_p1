@@ -15,16 +15,28 @@ void print_record_item (void *data_ptr)
 
 void save_record_item(void* data_ptr, void* arg_ptr)
 {
-    fprintf((FILE *)arg_ptr, "%s\n", get_Record_title((struct Record *)data_ptr));
+    save_Record((struct Record *)data_ptr, (FILE *)arg_ptr);
 }
 
-void save_record_item_full(void* data_ptr, void* arg_ptr)
-{
-    save_Record((struct Record *)data_ptr, arg_ptr);
-}
 
 
 int compare_string_with_record(const void* arg_ptr, const void* data_ptr)
 {
     return strcmp((char *) arg_ptr, get_Record_title((struct Record *)data_ptr));
 }
+
+void discard_input_remainder(void)
+{
+    while (getchar() != '\n') {
+        ;
+    }
+}
+
+void discard_file_input_remainder(FILE *input_file)
+{
+    while (fgetc(input_file) != '\n') {
+        ;
+    }
+}
+
+

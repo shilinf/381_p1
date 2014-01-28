@@ -14,6 +14,9 @@ struct Collection {
 	struct Ordered_container* members; 
 };
 
+void save_record_name(void* data_ptr, void* arg_ptr);
+
+
 struct Collection* create_Collection(const char* name)
 {
     struct Collection *new_collection = malloc(sizeof(struct Collection));
@@ -74,9 +77,8 @@ int remove_Collection_member(struct Collection* collection_ptr, const struct Rec
 void print_Collection(const struct Collection* collection_ptr)
 {
     printf("Collection %s contains:", collection_ptr->name);
-    if (OC_empty(collection_ptr->members)) {
+    if (OC_empty(collection_ptr->members))
         printf(" None\n");
-    }
     else {
         printf("\n");
         OC_apply(collection_ptr->members, print_record_item);
@@ -86,34 +88,51 @@ void print_Collection(const struct Collection* collection_ptr)
 void save_Collection(const struct Collection* collection_ptr, FILE* outfile)
 {
     fprintf(outfile, "%s %d\n", collection_ptr->name, OC_get_size(collection_ptr->members));
-    OC_apply_arg(collection_ptr->members, save_record_item, outfile);
+    OC_apply_arg(collection_ptr->members, save_record_name, outfile);
 }
 
 struct Collection* load_Collection(FILE* input_file, const struct Ordered_container* records)
 {
-    char collection_name[COLLECTION_NAME_SIZE];
+    char collection_name[COLLECTION_NAME_SIZE], fmt_str[20];
     int num_items, i;
     struct Collection *new_collection;
-    if(fscanf(input_file, COLLECTION_NAME_FMT, collection_name) != 1)
+    
+    sprintf(fmt_str, "%%%ds %%d", COLLECTION_NAME_SIZE-1);
+    if(fscanf(input_file, fmt_str, collection_name, &num_items) != 2)
         return NULL;
-    if (fscanf(input_file, "%d", &num_items) != 1)
-        return NULL;
+    
+    
+    
     new_collection = create_Collection(collection_name);
-    fgetc(input_file);
+    discard_file_input_remainder(input_file);
+    
+    
     for (i = 0; i < num_items; i++) {
         char title[RECORD_TITLE_SIZE];
+        
+        
         void *find_item_ptr;
         if(fgets(title, RECORD_TITLE_SIZE, input_file) == NULL) {
             destroy_Collection(new_collection);
             return NULL;
         }
         title[strlen(title) - 1] = '\0';
+        
+        
         find_item_ptr = OC_find_item_arg(records, title, compare_string_with_record);
         if (find_item_ptr == NULL) {
             destroy_Collection(new_collection);
             return NULL;
         }
+        
         add_Collection_member(new_collection, OC_get_data_ptr(find_item_ptr));
     }
+    
     return new_collection;
 }
+
+void save_record_name(void* data_ptr, void* arg_ptr)
+{
+    fprintf((FILE *)arg_ptr, "%s\n", get_Record_title((struct Record *)data_ptr));
+}
+
