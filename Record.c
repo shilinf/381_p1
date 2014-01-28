@@ -19,19 +19,16 @@ struct Record* create_Record(const char* medium, const char* title)
     new_record->ID = ++id_number_counter;
     new_record->rating = 0;
     new_record->title = malloc(strlen(title) + 1);
-    //printf("%d", strlen(title));
     g_string_memory += strlen(title) + 1;
     strcpy(new_record->title, title);
     new_record->medium = malloc(strlen(medium) + 1);
     g_string_memory += strlen(medium) + 1;
-    //printf("%d",  strlen(medium));
     strcpy(new_record->medium, medium);
     return new_record;
 }
 
 void destroy_Record(struct Record* record_ptr)
 {
-    //check whether + 1 is right, or should use - 1
     g_string_memory -= strlen(record_ptr->title) + 1;
     g_string_memory -= strlen(record_ptr->medium) + 1;
     free(record_ptr->title);
@@ -68,7 +65,6 @@ void save_Record(const struct Record* record_ptr, FILE* outfile)
 }
 
 
-//TODO: implement it after know the format of file
 struct Record* load_Record(FILE* infile)
 {
     int record_id, rating;
@@ -81,7 +77,7 @@ struct Record* load_Record(FILE* infile)
         return NULL;
     if (fscanf(infile, "%d", &rating) != 1)
         return NULL;
-    fgetc(infile); // remove the leading space
+    fgetc(infile); /* remove the leading space */
     if (fgets(title, RECORD_TITLE_SIZE, infile) == NULL) {
         return NULL;
     }

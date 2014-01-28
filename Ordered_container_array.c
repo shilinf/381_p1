@@ -2,7 +2,7 @@
 #include "Ordered_container.h"
 #include "p1_globals.h"
 
-// for all malloc, need to check whether enough space.
+/* for all malloc, need to check whether enough space. */
 
 
 int binary_search_helper(const struct Ordered_container* c_ptr, const void* search_ptr, int *insertion_position, int (*comp_function) (const void* arg1, const void* arg2));
@@ -17,10 +17,10 @@ struct Ordered_container {
 
 struct Ordered_container* OC_create_container(OC_comp_fp_t f_ptr)
 {
-    // the deallocation will be done when the function OC_destroy_container called.
+    /* the deallocation will be done when the function OC_destroy_container called.*/
     struct Ordered_container *container = malloc(sizeof(struct Ordered_container));
     if (container == NULL) {
-        // handle error: no space is available
+        /* handle error: no space is available*/
     }
     container->comp_fun = f_ptr;
     container->array = malloc(3 * sizeof(void *));
@@ -85,7 +85,6 @@ void OC_insert(struct Ordered_container* c_ptr, void* data_ptr)
     if (item_position != -1)
         insertion_position = item_position;
     c_ptr->size++;
-    //printf("%d", c_ptr->size);
     if (c_ptr->size > c_ptr->allocation) {
         void **new_array;
         g_Container_items_allocated += c_ptr->allocation + 2;
@@ -163,7 +162,7 @@ int OC_apply_if_arg(const struct Ordered_container* c_ptr, OC_apply_if_arg_fp_t 
     return 0;
 }
 
-// do a generic function for comparison in binary search
+/* do a generic function for comparison in binary search */
 int binary_search_helper(const struct Ordered_container* c_ptr, const void* search_ptr, int *insertion_position, int (*comp_function) (const void* arg1, const void* arg2))
 {
     int low,high,mid;
@@ -177,11 +176,11 @@ int binary_search_helper(const struct Ordered_container* c_ptr, const void* sear
             high = mid - 1;
         else if(comp_result > 0)
             low = mid + 1;
-        else    //found match
+        else    /*found match*/
             return mid;
     }
-    *insertion_position = high + 1; //no match, set the insertion position
-    return -1;  //no match
+    *insertion_position = high + 1; /*no match, set the insertion position */
+    return -1;  /*no match */
 }
 
 

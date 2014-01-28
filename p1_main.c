@@ -56,7 +56,7 @@ int check_record_in_collection (void* data_ptr, void* arg_ptr)
 
 int check_collection_empty (void* data_ptr)
 {
-    // check whether ! work as I like
+    /* check whether ! work as I like */
     return !Collection_empty((struct Collection *)data_ptr);
 }
 
@@ -108,14 +108,12 @@ void pr(void)
 {
     int id_input;
     if (scanf("%d", &id_input) == 1) {
-        //printf("%d", id_input);
         void *find_item_ptr = OC_find_item_arg(library_id, &id_input, compare_id_with_record);
         if (find_item_ptr == NULL) {
             printf("No record with that ID!\n");
             discard_input_remainder();
         }
         else {
-            //printf("%s", get_Record_title(find_item));
             print_Record(OC_get_data_ptr(find_item_ptr));
         }
     }
@@ -177,7 +175,7 @@ void pa(void)
 
 void ar(void)
 {
-    // read title is same as fr (try to use function afterwards)
+    /* read title is same as fr (try to use function afterwards) */
     char medium[RECORD_MEDIUM_SIZE], title[RECORD_TITLE_SIZE];
     scanf(RECORD_MEDIUM_FMT, medium);
     fgets(title, RECORD_TITLE_SIZE, stdin);
@@ -200,7 +198,7 @@ void ar(void)
 
 void ac(void)
 {
-    // almost same as pc duplicate
+    /* almost same as pc duplicate */
     char collection_name[COLLECTION_NAME_SIZE];
     void *find_item_ptr;
     scanf(COLLECTION_NAME_FMT, collection_name);
@@ -218,7 +216,7 @@ void ac(void)
 
 void am(void)
 {
-    //duplicate
+    /*duplicate */
     char collection_name[COLLECTION_NAME_SIZE];
     void *find_item_ptr;
     scanf(COLLECTION_NAME_FMT, collection_name);
@@ -313,7 +311,7 @@ void dr(void)
     }
 }
 
-// used the function check_collection_name
+/* used the function check_collection_name */
 void dc(void)
 {
     void *find_collection_item_ptr = check_collection_name();
@@ -332,7 +330,7 @@ void dc(void)
 
 void dm(void)
 {
-    //read collection name duplicate code
+    /*read collection name duplicate code*/
     char collection_name[COLLECTION_NAME_SIZE];
     void *find_item_ptr;
     scanf(COLLECTION_NAME_FMT, collection_name);
@@ -430,7 +428,7 @@ void rA(void)
     }
     cA();
 
-    // remember handle the ID number, remember remove all unvalid data before return
+    /* remember handle the ID number, remember remove all unvalid data before return */
     if (fscanf(fp, "%d", &num_record) != 1) {
         printf("Invalid data found in file!\n");
         discard_input_remainder();
@@ -483,7 +481,7 @@ void qq(void)
     exit(EXIT_SUCCESS);
 }
 
-//?? Is this useful?
+/*?? Is this useful? */
 void *check_collection_name(void)
 {
     char collection_name[COLLECTION_NAME_SIZE];
@@ -667,7 +665,7 @@ int trim_title(char *title)
             *title_iterator++ = ' ';
         }
     }
-    if (valid == 1) {
+    if (isspace(*(--title))) {
         *(title_iterator-1) = '\0';
     }
     else {

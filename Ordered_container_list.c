@@ -29,7 +29,7 @@ struct Ordered_container* OC_create_container(OC_comp_fp_t f_ptr)
 {
     struct Ordered_container *container = malloc(sizeof(struct Ordered_container));
     if (container == NULL) {
-        //handle error: no space is available
+        /*handle error: no space is available */
     }
     container->comp_func = f_ptr;
     container->size = 0;
@@ -41,7 +41,7 @@ struct Ordered_container* OC_create_container(OC_comp_fp_t f_ptr)
 
 void OC_destroy_container(struct Ordered_container* c_ptr)
 {
-    // reduce the items in use and allocated , considering combine them together
+    /* reduce the items in use and allocated , considering combine them together*/
     struct LL_Node *node_iterator = c_ptr->first;
     g_Container_items_in_use -= c_ptr->size;
     g_Container_items_allocated -= c_ptr->size;
