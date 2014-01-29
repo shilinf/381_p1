@@ -27,12 +27,11 @@ struct Ordered_container {
 };
 
 void OC_initial(struct Ordered_container *c_ptr);
-
 void OC_clear_items(struct Ordered_container* c_ptr);
+void OC_free_LL_Node(struct LL_Node *node);
 
 struct Ordered_container* OC_create_container(OC_comp_fp_t f_ptr)
 {
-    
     /* the deallocation will be done when the function OC_destroy_container called.*/
     struct Ordered_container *c_ptr = malloc_guard(sizeof(struct Ordered_container));
     OC_initial(c_ptr);
@@ -65,16 +64,19 @@ void OC_initial(struct Ordered_container *c_ptr)
 void OC_clear_items(struct Ordered_container* c_ptr)
 {
     struct LL_Node *node_iterator = c_ptr->first;
-    while (node_iterator != NULL) {
+    while (node_iterator) {
         struct LL_Node *node_next = node_iterator->next;
-        free(node_iterator);
+        OC_free_LL_Node(node_iterator);
         node_iterator = node_next;
     }
-    g_Container_items_in_use -= c_ptr->size;
-    g_Container_items_allocated -= c_ptr->size;
 }
 
-
+void OC_free_LL_Node(struct LL_Node *node)
+{
+    free(node);
+    g_Container_items_in_use--;
+    g_Container_items_allocated--;
+}
 
 int OC_get_size(const struct Ordered_container* c_ptr)
 {
@@ -83,7 +85,7 @@ int OC_get_size(const struct Ordered_container* c_ptr)
 
 int OC_empty(const struct Ordered_container* c_ptr)
 {
-    return (c_ptr->size == 0) ? 1 : 0;
+    return !c_ptr->size;
 }
 
 void* OC_get_data_ptr(const void* item_ptr)
@@ -94,15 +96,15 @@ void* OC_get_data_ptr(const void* item_ptr)
 void OC_delete_item(struct Ordered_container* c_ptr, void* item_ptr)
 {
     struct LL_Node *node = item_ptr;
-    if(node->prev == NULL && node->next == NULL) {
+    if(!node->prev && !node->next) {
         c_ptr->first = NULL;
         c_ptr->last = NULL;
     }
-    else if(node->prev == NULL) {
+    else if(!node->prev) {
         c_ptr->first = node->next;
         node->next->prev = NULL;
     }
-    else if(node->next == NULL) {
+    else if(!node->next) {
         c_ptr->last = node->prev;
         node->prev->next = NULL;
     }
@@ -110,10 +112,8 @@ void OC_delete_item(struct Ordered_container* c_ptr, void* item_ptr)
         node->prev->next = node->next;
         node->next->prev = node->prev;
     }
-    free(node);
+    OC_free_LL_Node(node);
     c_ptr->size--;
-    g_Container_items_in_use--;
-    g_Container_items_allocated--;
 }
 
 void OC_insert(struct Ordered_container* c_ptr, void* data_ptr)
@@ -158,7 +158,7 @@ void* OC_find_item(const struct Ordered_container* c_ptr, const void* data_ptr)
 {
     struct LL_Node *node_iterator = c_ptr->first;
     while(1) {
-        if (node_iterator == NULL || c_ptr->comp_func(data_ptr, node_iterator->data_ptr) < 0)
+        if (!node_iterator || c_ptr->comp_func(data_ptr, node_iterator->data_ptr) < 0)
             return NULL;
         if(c_ptr->comp_func(node_iterator->data_ptr, data_ptr) == 0)
             return node_iterator;
@@ -171,7 +171,7 @@ void* OC_find_item_arg(const struct Ordered_container* c_ptr, const void* arg_pt
 {
     struct LL_Node *node_iterator = c_ptr->first;
     while(1) {
-        if (node_iterator == NULL || fafp(arg_ptr, node_iterator->data_ptr) < 0)
+        if (!node_iterator || fafp(arg_ptr, node_iterator->data_ptr) < 0)
             return NULL;
         if(fafp(arg_ptr, node_iterator->data_ptr) == 0)
             return node_iterator;
@@ -183,7 +183,7 @@ void* OC_find_item_arg(const struct Ordered_container* c_ptr, const void* arg_pt
 void OC_apply(const struct Ordered_container* c_ptr, OC_apply_fp_t afp)
 {
     struct LL_Node *node_iterator = c_ptr->first;
-    while (node_iterator != NULL) {
+    while (node_iterator) {
         afp(node_iterator->data_ptr);
         node_iterator = node_iterator->next;
     }
@@ -192,9 +192,9 @@ void OC_apply(const struct Ordered_container* c_ptr, OC_apply_fp_t afp)
 int OC_apply_if(const struct Ordered_container* c_ptr, OC_apply_if_fp_t afp)
 {
     struct LL_Node *node_iterator = c_ptr->first;
-    while (node_iterator != NULL) {
+    while (node_iterator) {
         int afp_return_value = afp(node_iterator->data_ptr);
-        if (afp_return_value != 0)
+        if (afp_return_value)
             return afp_return_value;
         node_iterator = node_iterator->next;
     }
@@ -205,7 +205,7 @@ int OC_apply_if(const struct Ordered_container* c_ptr, OC_apply_if_fp_t afp)
 void OC_apply_arg(const struct Ordered_container* c_ptr, OC_apply_arg_fp_t afp, void* arg_ptr)
 {
     struct LL_Node *node_iterator = c_ptr->first;
-    while (node_iterator != NULL) {
+    while (node_iterator) {
         afp(node_iterator->data_ptr, arg_ptr);
         node_iterator = node_iterator->next;
     }
@@ -214,34 +214,14 @@ void OC_apply_arg(const struct Ordered_container* c_ptr, OC_apply_arg_fp_t afp, 
 int OC_apply_if_arg(const struct Ordered_container* c_ptr, OC_apply_if_arg_fp_t afp, void* arg_ptr)
 {
     struct LL_Node *node_iterator = c_ptr->first;
-    while (node_iterator != NULL) {
+    while (node_iterator) {
         int afp_return_value = afp(node_iterator->data_ptr, arg_ptr);
-        if (afp_return_value != 0)
+        if (afp_return_value)
             return afp_return_value;
         node_iterator = node_iterator->next;
     }
     return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

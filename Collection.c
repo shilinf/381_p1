@@ -19,7 +19,6 @@ void save_Record_name(void* data_ptr, void* arg_ptr);
 void discard_file_input_remainder(FILE *input_file);
 
 
-
 struct Collection* create_Collection(const char* name)
 {
     /* the deallocation will be done when the function destroy_Collection called.*/

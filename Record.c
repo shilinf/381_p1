@@ -18,21 +18,12 @@ struct Record* create_Record(const char* medium, const char* title)
 {
     /* the deallocation will be done when the function destroy_Record called.*/
     struct Record *new_record = malloc_guard(sizeof(struct Record));
-    if (new_record == NULL) {
-        exit(1);
-    }
     new_record->ID = ++id_number_counter;
     new_record->rating = 0;
     new_record->title = malloc_guard(strlen(title) + 1);
-    if (new_record->title == NULL) {
-        exit(1);
-    }
     g_string_memory += strlen(title) + 1;
     strcpy(new_record->title, title);
     new_record->medium = malloc_guard(strlen(medium) + 1);
-    if (new_record->medium == NULL) {
-        exit(1);
-    }
     g_string_memory += strlen(medium) + 1;
     strcpy(new_record->medium, medium);
     return new_record;

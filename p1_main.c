@@ -10,10 +10,7 @@
 
 #define FILE_NAME_SIZE 32
 
-static struct Ordered_container *library_id;
-static struct Ordered_container *library_title;
-static struct Ordered_container *catalog;
-
+static struct Ordered_container *library_ordered_by_id, *library_ordered_by_title, *catalog;
 
 /* helper functions for main */
 int trim_title(char *title);
@@ -77,8 +74,8 @@ void quit(void);
 int main(void)
 {
     char action, object;
-    library_id = OC_create_container((OC_comp_fp_t) compare_Record_id);
-    library_title =  OC_create_container((OC_comp_fp_t) compare_record_title);
+    library_ordered_by_id = OC_create_container((OC_comp_fp_t) compare_Record_id);
+    library_ordered_by_title =  OC_create_container((OC_comp_fp_t) compare_record_title);
     catalog = OC_create_container((OC_comp_fp_t) compare_Collection_name);
     
     while (1) {
@@ -240,8 +237,7 @@ int trim_title(char *title)
 
 void handle_invalid_command_error(void)
 {
-    const char * const command_invalid = "Unrecognized command!\n";
-    printf("%s", command_invalid);
+    printf("%s", "Unrecognized command!\n");
     discard_input_remainder();
 }
 
@@ -357,7 +353,7 @@ void find_Record_match_title(void)
 {
     char title[RECORD_TITLE_SIZE];
     if (read_check_title(title)) {
-        void *find_item_ptr = OC_find_item_arg(library_title, title, compare_string_with_record);
+        void *find_item_ptr = OC_find_item_arg(library_ordered_by_title, title, compare_string_with_record);
         if (find_item_ptr)
             print_Record(OC_get_data_ptr(find_item_ptr));
         else
@@ -369,7 +365,7 @@ void print_Record_match_id(void)
 {
     int id_input;
     if (scanf("%d", &id_input) == 1) {
-        void *find_item_ptr = OC_find_item_arg(library_id, &id_input, compare_id_with_Record);
+        void *find_item_ptr = OC_find_item_arg(library_ordered_by_id, &id_input, compare_id_with_Record);
         if (find_item_ptr)
             print_Record(OC_get_data_ptr(find_item_ptr));
         else {
@@ -396,10 +392,10 @@ void print_Collection_match_name(void)
 
 void print_Records(void)
 {
-    int library_size = OC_get_size(library_title);
+    int library_size = OC_get_size(library_ordered_by_title);
     if (library_size) {
         printf("Library contains %d records:\n", library_size);
-        OC_apply(library_title, print_record_item);
+        OC_apply(library_ordered_by_title, print_record_item);
     }
     else
         printf("Library is empty\n");
@@ -419,7 +415,7 @@ void print_Catalog(void)
 void print_memory_allocation(void)
 {
     printf("Memory allocations:\n");
-    printf("Records: %d\n", OC_get_size(library_title));
+    printf("Records: %d\n", OC_get_size(library_ordered_by_title));
     printf("Collections: %d\n", OC_get_size(catalog));
     printf("Containers: %d\n", g_Container_count);
     printf("Container items in use: %d\n", g_Container_items_in_use);
@@ -435,13 +431,13 @@ void add_Record(void)
     sprintf(fmt_str, "%%%ds", RECORD_MEDIUM_SIZE-1);
     scanf(fmt_str, medium);
     if (read_check_title(title) == 1) {
-        void *find_item_ptr = OC_find_item_arg(library_title, &title, compare_string_with_record);
+        void *find_item_ptr = OC_find_item_arg(library_ordered_by_title, title, compare_string_with_record);
         if (find_item_ptr)
             printf("Library already has a record with this title!\n");
         else {
             struct Record *new_record = create_Record(medium, title);
-            OC_insert(library_title, new_record);
-            OC_insert(library_id, new_record);
+            OC_insert(library_ordered_by_title, new_record);
+            OC_insert(library_ordered_by_id, new_record);
             printf("Record %d added\n", get_Record_ID(new_record));
         }
     }
@@ -483,15 +479,17 @@ void add_Record_to_Collection(void)
         discard_input_remainder();
         return;
     }
-    find_Record_item_ptr = OC_find_item_arg(library_id, &id_input, compare_id_with_Record);
+    find_Record_item_ptr = OC_find_item_arg(library_ordered_by_id, &id_input, compare_id_with_Record);
     if (!find_Record_item_ptr) {
         printf("No record with that ID!\n");
         discard_input_remainder();
         return;
     }
     find_Record =OC_get_data_ptr(find_Record_item_ptr);
-    if (add_Collection_member(find_collection, find_Record))
+    if (add_Collection_member(find_collection, find_Record)) {
         printf("Record is already a member in the collection!\n");
+        discard_input_remainder();
+    }
     else
         printf("Member %d %s added\n", id_input, get_Record_title(find_Record));
 }
@@ -507,7 +505,7 @@ void modify_Record_rating(void)
         discard_input_remainder();
         return;
     }
-    find_item_ptr = OC_find_item_arg(library_id, &id_input, compare_id_with_Record);
+    find_item_ptr = OC_find_item_arg(library_ordered_by_id, &id_input, compare_id_with_Record);
     if (!find_item_ptr) {
         printf("No record with that ID!\n");
         discard_input_remainder();
@@ -533,7 +531,7 @@ void delete_Record_from_Library(void)
     char title[RECORD_TITLE_SIZE];
     if (read_check_title(title)) {
         struct Record *find_data;
-        void * find_item_ptr = OC_find_item_arg(library_title, title, compare_string_with_record);
+        void * find_item_ptr = OC_find_item_arg(library_ordered_by_title, title, compare_string_with_record);
         if (!find_item_ptr) {
             printf("No record with that title!\n");
             return;
@@ -543,8 +541,8 @@ void delete_Record_from_Library(void)
             printf("Cannot delete a record that is a member of a collection!\n");
         else {
             printf("Record %d %s deleted\n", get_Record_ID(find_data), title);
-            OC_delete_item(library_id, OC_find_item(library_id, find_data));
-            OC_delete_item(library_title, OC_find_item(library_title, find_data));
+            OC_delete_item(library_ordered_by_id, OC_find_item(library_ordered_by_id, find_data));
+            OC_delete_item(library_ordered_by_title, OC_find_item(library_ordered_by_title, find_data));
             destroy_Record(find_data);
         }
     }
@@ -582,7 +580,7 @@ void delete_Record_from_Collection(void)
         discard_input_remainder();
         return;
     }
-    find_record_item_ptr = OC_find_item_arg(library_id, &id_input, compare_id_with_Record);
+    find_record_item_ptr = OC_find_item_arg(library_ordered_by_id, &id_input, compare_id_with_Record);
     if (!find_record_item_ptr) {
         printf("No record with that ID!\n");
         discard_input_remainder();
@@ -607,9 +605,9 @@ int clear_Library(void)
         return 0;
     }
     else {
-        OC_apply(library_title, free_Record);
-        OC_clear(library_title);
-        OC_clear(library_id);
+        OC_apply(library_ordered_by_title, free_Record);
+        OC_clear(library_ordered_by_title);
+        OC_clear(library_ordered_by_id);
         reset_Record_ID_counter();
         return 1;
     }
@@ -632,8 +630,8 @@ void save_all_data(void)
 {
     FILE *fp = open_file("w");
     if (fp) {
-        fprintf(fp, "%d\n", OC_get_size(library_title));
-        OC_apply_arg(library_title, save_Record_item, fp);
+        fprintf(fp, "%d\n", OC_get_size(library_ordered_by_title));
+        OC_apply_arg(library_ordered_by_title, save_Record_item, fp);
         fprintf(fp, "%d\n", OC_get_size(catalog));
         OC_apply_arg(catalog, save_Collection_item, fp);
         fclose(fp);
@@ -651,7 +649,6 @@ void restore_all_data(void)
     
     clear_all_data();
     
-    /* remember handle the ID number, remember remove all unvalid data before return */
     if (fscanf(fp, "%d", &num_record) != 1) {
         handle_rA_data_invalid(fp);
         return;
@@ -664,8 +661,8 @@ void restore_all_data(void)
             return;
         }
         else {
-            OC_insert(library_id, new_record);
-            OC_insert(library_title, new_record);
+            OC_insert(library_ordered_by_id, new_record);
+            OC_insert(library_ordered_by_title, new_record);
         }
     }
     
@@ -676,7 +673,7 @@ void restore_all_data(void)
     }
     
     for (i = 0; i < num_collection; i++) {
-        struct Collection *new_collection = load_Collection(fp, library_title);
+        struct Collection *new_collection = load_Collection(fp, library_ordered_by_title);
         
         if (!new_collection) {
             handle_rA_data_invalid(fp);
@@ -692,14 +689,12 @@ void quit(void)
 {
     clear_all_data();
     printf("All data deleted\n");
-    OC_destroy_container(library_id);
-    OC_destroy_container(library_title);
+    OC_destroy_container(library_ordered_by_id);
+    OC_destroy_container(library_ordered_by_title);
     OC_destroy_container(catalog);
     printf("Done\n");
     exit(EXIT_SUCCESS);
 }
-
-
 
 
 
