@@ -14,13 +14,17 @@ struct Collection {
 	struct Ordered_container* members; 
 };
 
-void save_record_name(void* data_ptr, void* arg_ptr);
+void save_Record_name(void* data_ptr, void* arg_ptr);
+
+void discard_file_input_remainder(FILE *input_file);
+
 
 
 struct Collection* create_Collection(const char* name)
 {
-    struct Collection *new_collection = malloc(sizeof(struct Collection));
-    new_collection->name = malloc(strlen(name) + 1);
+    /* the deallocation will be done when the function destroy_Collection called.*/
+    struct Collection *new_collection = malloc_guard(sizeof(struct Collection));
+    new_collection->name = malloc_guard(strlen(name) + 1);
     g_string_memory += strlen(name) + 1;
     strcpy(new_collection->name, name);
     new_collection->members = OC_create_container(compare_record_title);
@@ -47,31 +51,31 @@ int Collection_empty(const struct Collection* collection_ptr)
 
 int add_Collection_member(struct Collection* collection_ptr, const struct Record* record_ptr)
 {
-    if(OC_find_item(collection_ptr->members, record_ptr) == NULL) {
+    if(OC_find_item(collection_ptr->members, record_ptr))
+        return 1;
+    else {
         OC_insert(collection_ptr->members, (void *)record_ptr);
         return 0;
     }
-    else
-        return 1;
 }
 
 int is_Collection_member_present(const struct Collection* collection_ptr, const struct Record* record_ptr)
 {
-    if(OC_find_item(collection_ptr->members, record_ptr) == NULL)
-        return 0;
-    else
+    if(OC_find_item(collection_ptr->members, record_ptr))
         return 1;
+    else
+        return 0;
 }
 
 int remove_Collection_member(struct Collection* collection_ptr, const struct Record* record_ptr)
 {
     void *find_item_ptr = OC_find_item(collection_ptr->members, record_ptr);
-    if(find_item_ptr == NULL)
-        return 1;
-    else {
+    if(find_item_ptr) {
         OC_delete_item(collection_ptr->members, find_item_ptr);
         return 0;
     }
+    else
+        return 1;
 }
 
 void print_Collection(const struct Collection* collection_ptr)
@@ -88,7 +92,7 @@ void print_Collection(const struct Collection* collection_ptr)
 void save_Collection(const struct Collection* collection_ptr, FILE* outfile)
 {
     fprintf(outfile, "%s %d\n", collection_ptr->name, OC_get_size(collection_ptr->members));
-    OC_apply_arg(collection_ptr->members, save_record_name, outfile);
+    OC_apply_arg(collection_ptr->members, save_Record_name, outfile);
 }
 
 struct Collection* load_Collection(FILE* input_file, const struct Ordered_container* records)
@@ -131,8 +135,14 @@ struct Collection* load_Collection(FILE* input_file, const struct Ordered_contai
     return new_collection;
 }
 
-void save_record_name(void* data_ptr, void* arg_ptr)
+void save_Record_name(void* data_ptr, void* arg_ptr)
 {
     fprintf((FILE *)arg_ptr, "%s\n", get_Record_title((struct Record *)data_ptr));
 }
 
+void discard_file_input_remainder(FILE *input_file)
+{
+    while (fgetc(input_file) != '\n') {
+        ;
+    }
+}

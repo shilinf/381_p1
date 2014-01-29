@@ -5,19 +5,15 @@
 #define COLLECTION_NAME_SIZE 16
 #define RECORD_MEDIUM_SIZE 8
 
-
+/* compare functions for OC */
 int compare_record_title(const void* data_ptr1, const void* data_ptr2);
-
-void print_record_item (void *data_ptr);
-
-void save_record_item(void* data_ptr, void* arg_ptr);
-
 int compare_string_with_record(const void* arg_ptr, const void* data_ptr);
 
-void discard_input_remainder(void);
+/* implementation for OC_apply_fp_t*/
+void print_record_item (void *data_ptr);
 
-void discard_file_input_remainder(FILE *input_file);
-
+/* check whether malloc succeed */
+void *malloc_guard(size_t memory_size);
 
 
 #endif

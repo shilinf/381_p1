@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include "Ordered_container.h"
 #include "p1_globals.h"
+#include "Utility.h"
 
 /* struct LL_Node structure declaration. This declaration is local to this file. 
 This is a two-way or doubly-linked list. Each node has a pointer to the previous 
@@ -25,37 +26,44 @@ struct Ordered_container {
 	int size;
 };
 
+void OC_initial(struct Ordered_container *c_ptr);
+
+void OC_clear_items(struct Ordered_container* c_ptr);
+
 struct Ordered_container* OC_create_container(OC_comp_fp_t f_ptr)
 {
-    struct Ordered_container *container = malloc(sizeof(struct Ordered_container));
-    if (container == NULL) {
-        /*handle error: no space is available */
-    }
-    container->comp_func = f_ptr;
-    container->size = 0;
-    container->first = NULL;
-    container->last = NULL;
+    
+    /* the deallocation will be done when the function OC_destroy_container called.*/
+    struct Ordered_container *c_ptr = malloc_guard(sizeof(struct Ordered_container));
+    OC_initial(c_ptr);
+    c_ptr->comp_func = f_ptr;
     g_Container_count++;
-    return container;
+    return c_ptr;
 }
 
 void OC_destroy_container(struct Ordered_container* c_ptr)
 {
-    /* reduce the items in use and allocated , considering combine them together*/
-    struct LL_Node *node_iterator = c_ptr->first;
-    g_Container_items_in_use -= c_ptr->size;
-    g_Container_items_allocated -= c_ptr->size;
-    while (node_iterator != NULL) {
-        struct LL_Node *node_next = node_iterator->next;
-        free(node_iterator);
-        node_iterator = node_next;
-    }
+    OC_clear_items(c_ptr);
     free(c_ptr);
     g_Container_count--;
 }
 
 void OC_clear(struct Ordered_container* c_ptr)
 {
+    OC_clear_items(c_ptr);
+    OC_initial(c_ptr);
+}
+
+
+void OC_initial(struct Ordered_container *c_ptr)
+{
+    c_ptr->size = 0;
+    c_ptr->first = NULL;
+    c_ptr->last = NULL;
+}
+
+void OC_clear_items(struct Ordered_container* c_ptr)
+{
     struct LL_Node *node_iterator = c_ptr->first;
     while (node_iterator != NULL) {
         struct LL_Node *node_next = node_iterator->next;
@@ -64,10 +72,9 @@ void OC_clear(struct Ordered_container* c_ptr)
     }
     g_Container_items_in_use -= c_ptr->size;
     g_Container_items_allocated -= c_ptr->size;
-    c_ptr->size = 0;
-    c_ptr->first = NULL;
-    c_ptr->last = NULL;
 }
+
+
 
 int OC_get_size(const struct Ordered_container* c_ptr)
 {
@@ -111,7 +118,8 @@ void OC_delete_item(struct Ordered_container* c_ptr, void* item_ptr)
 
 void OC_insert(struct Ordered_container* c_ptr, void* data_ptr)
 {
-    struct LL_Node *new_node = malloc(sizeof(struct LL_Node));
+    /* the deallocation will be done when the function OC_delete_item or  OC_clear_items called.*/
+    struct LL_Node *new_node = malloc_guard(sizeof(struct LL_Node));
     new_node->data_ptr = data_ptr;
     if(OC_empty(c_ptr)) {
         new_node->prev = NULL;

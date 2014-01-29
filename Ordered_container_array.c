@@ -1,11 +1,15 @@
 #include <stdlib.h>
 #include "Ordered_container.h"
 #include "p1_globals.h"
+#include "Utility.h"
 
 /* for all malloc, need to check whether enough space. */
 
 
 int binary_search_helper(const struct Ordered_container* c_ptr, const void* search_ptr, int *insertion_position, int (*comp_function) (const void* arg1, const void* arg2));
+
+void OC_initial(struct Ordered_container* c_ptr);
+void OC_clear_items(struct Ordered_container *c_ptr);
 
 /* A complete type declaration for Ordered_container implemented as an array */
 struct Ordered_container {
@@ -18,37 +22,40 @@ struct Ordered_container {
 struct Ordered_container* OC_create_container(OC_comp_fp_t f_ptr)
 {
     /* the deallocation will be done when the function OC_destroy_container called.*/
-    struct Ordered_container *container = malloc(sizeof(struct Ordered_container));
-    if (container == NULL) {
-        /* handle error: no space is available*/
-    }
-    container->comp_fun = f_ptr;
-    container->array = malloc(3 * sizeof(void *));
-    container->allocation = 3;
-    container->size = 0;
+    struct Ordered_container *c_ptr = malloc_guard(sizeof(struct Ordered_container));
+    c_ptr->comp_fun = f_ptr;
+    OC_initial(c_ptr);
     g_Container_count++;
-    g_Container_items_allocated += 3;
-    return container;
+    return c_ptr;
 }
 
 void OC_destroy_container(struct Ordered_container* c_ptr)
 {
-    free(c_ptr->array);
+    OC_clear_items(c_ptr);
     free(c_ptr);
-    g_Container_items_in_use -= c_ptr->size;
-    g_Container_items_allocated -= c_ptr->allocation;
     g_Container_count--;
 }
 
 void OC_clear(struct Ordered_container* c_ptr)
 {
+    OC_clear_items(c_ptr);
+    OC_initial(c_ptr);
+}
+
+void OC_initial(struct Ordered_container* c_ptr)
+{
+    /* the deallocation will be done when the function OC_destroy_container or OC_clear called.*/
+    c_ptr->array = malloc_guard(3 * sizeof(void *));
+    c_ptr->size = 0;
+    c_ptr->allocation = 3;
+    g_Container_items_allocated += c_ptr->allocation;
+}
+
+void OC_clear_items(struct Ordered_container *c_ptr)
+{
     free(c_ptr->array);
     g_Container_items_in_use -= c_ptr->size;
     g_Container_items_allocated -= c_ptr->allocation;
-    c_ptr->array = malloc(3 * sizeof(void *));
-    c_ptr->allocation = 3;
-    g_Container_items_allocated += c_ptr->allocation;
-    c_ptr->size = 0;
 }
 
 int OC_get_size(const struct Ordered_container* c_ptr)
@@ -89,7 +96,9 @@ void OC_insert(struct Ordered_container* c_ptr, void* data_ptr)
         void **new_array;
         g_Container_items_allocated += c_ptr->allocation + 2;
         c_ptr->allocation = 2 * (c_ptr->allocation + 1);
-        new_array = malloc(c_ptr->allocation * sizeof(void *));
+        
+        /* the deallocation will be done when the function OC_destroy_container or OC_clear called.*/
+        new_array = malloc_guard(c_ptr->allocation * sizeof(void *));
         for (i = 0; i < insertion_position; i++)
             new_array[i] = c_ptr->array[i];
         new_array[insertion_position] = data_ptr;
@@ -182,8 +191,3 @@ int binary_search_helper(const struct Ordered_container* c_ptr, const void* sear
     *insertion_position = high + 1; /*no match, set the insertion position */
     return -1;  /*no match */
 }
-
-
-
-
-

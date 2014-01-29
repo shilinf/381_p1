@@ -6,5 +6,4 @@ extern int g_Container_items_in_use;	/* number of Ordered_container items curren
 extern int g_Container_items_allocated;	/* number of Ordered_container items currently allocated */
 extern int g_string_memory;			/* number of bytes used in C-strings */
 
-
 #endif

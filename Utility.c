@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "Utility.h"
 #include "Record.h"
@@ -13,30 +14,18 @@ void print_record_item (void *data_ptr)
     print_Record((const struct Record *) data_ptr);
 }
 
-void save_record_item(void* data_ptr, void* arg_ptr)
-{
-    save_Record((struct Record *)data_ptr, (FILE *)arg_ptr);
-}
-
-
-
 int compare_string_with_record(const void* arg_ptr, const void* data_ptr)
 {
     return strcmp((char *) arg_ptr, get_Record_title((struct Record *)data_ptr));
 }
 
-void discard_input_remainder(void)
+void *malloc_guard(size_t memory_size)
 {
-    while (getchar() != '\n') {
-        ;
+    void *new_memory = malloc(memory_size);
+    if (new_memory == NULL) {
+        fprintf(stderr, "Memory allocation failed!");
+        exit(EXIT_FAILURE);
     }
+    return new_memory;
 }
-
-void discard_file_input_remainder(FILE *input_file)
-{
-    while (fgetc(input_file) != '\n') {
-        ;
-    }
-}
-
 

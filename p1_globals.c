@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "p1_globals.h"
 
 int g_Container_count = 0;
