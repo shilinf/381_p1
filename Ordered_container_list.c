@@ -1,7 +1,7 @@
-#include <stdlib.h>
 #include "Ordered_container.h"
 #include "p1_globals.h"
 #include "Utility.h"
+#include <stdlib.h>
 
 /* struct LL_Node structure declaration. This declaration is local to this file. 
 This is a two-way or doubly-linked list. Each node has a pointer to the previous 
@@ -32,8 +32,10 @@ void OC_free_LL_Node(struct LL_Node *node);
 
 struct Ordered_container* OC_create_container(OC_comp_fp_t f_ptr)
 {
-    /* the deallocation will be done when the function OC_destroy_container called.*/
-    struct Ordered_container *c_ptr = malloc_guard(sizeof(struct Ordered_container));
+    /* the deallocation will be done when the function 
+     OC_destroy_container called.*/
+    struct Ordered_container *c_ptr =
+    malloc_guard(sizeof(struct Ordered_container));
     OC_initial(c_ptr);
     c_ptr->comp_func = f_ptr;
     g_Container_count++;
@@ -53,7 +55,7 @@ void OC_clear(struct Ordered_container* c_ptr)
     OC_initial(c_ptr);
 }
 
-
+/* set some initial value for container */
 void OC_initial(struct Ordered_container *c_ptr)
 {
     c_ptr->size = 0;
@@ -61,6 +63,7 @@ void OC_initial(struct Ordered_container *c_ptr)
     c_ptr->last = NULL;
 }
 
+/* clear all nodes in the container */
 void OC_clear_items(struct Ordered_container* c_ptr)
 {
     struct LL_Node *node_iterator = c_ptr->first;
@@ -71,6 +74,7 @@ void OC_clear_items(struct Ordered_container* c_ptr)
     }
 }
 
+/* free the memory for nodes and change the global variables */
 void OC_free_LL_Node(struct LL_Node *node)
 {
     free(node);
@@ -118,21 +122,24 @@ void OC_delete_item(struct Ordered_container* c_ptr, void* item_ptr)
 
 void OC_insert(struct Ordered_container* c_ptr, void* data_ptr)
 {
-    /* the deallocation will be done when the function OC_delete_item or  OC_clear_items called.*/
+    /* the deallocation will be done when the function OC_free_LL_Node called */
     struct LL_Node *new_node = malloc_guard(sizeof(struct LL_Node));
     new_node->data_ptr = data_ptr;
+    /* insert node is the first node */
     if(OC_empty(c_ptr)) {
         new_node->prev = NULL;
         new_node->next = NULL;
         c_ptr->first = new_node;
         c_ptr->last = new_node;
     }
+    /* insert node in the beginning */
     else if(c_ptr->comp_func(c_ptr->first->data_ptr, data_ptr) >= 0) {
         c_ptr->first->prev = new_node;
         new_node->next = c_ptr->first;
         new_node->prev = NULL;
         c_ptr->first = new_node;
     }
+    /* insert node in the end */
     else if(c_ptr->comp_func(c_ptr->last->data_ptr, data_ptr) <= 0){
         c_ptr->last->next = new_node;
         new_node->prev = c_ptr->last;
@@ -158,7 +165,8 @@ void* OC_find_item(const struct Ordered_container* c_ptr, const void* data_ptr)
 {
     struct LL_Node *node_iterator = c_ptr->first;
     while(1) {
-        if (!node_iterator || c_ptr->comp_func(data_ptr, node_iterator->data_ptr) < 0)
+        if (!node_iterator ||
+            c_ptr->comp_func(data_ptr, node_iterator->data_ptr) < 0)
             return NULL;
         if(c_ptr->comp_func(node_iterator->data_ptr, data_ptr) == 0)
             return node_iterator;
@@ -167,7 +175,8 @@ void* OC_find_item(const struct Ordered_container* c_ptr, const void* data_ptr)
     return NULL;
 }
 
-void* OC_find_item_arg(const struct Ordered_container* c_ptr, const void* arg_ptr, OC_find_item_arg_fp_t fafp)
+void* OC_find_item_arg(const struct Ordered_container* c_ptr,
+                       const void* arg_ptr, OC_find_item_arg_fp_t fafp)
 {
     struct LL_Node *node_iterator = c_ptr->first;
     while(1) {
@@ -202,7 +211,8 @@ int OC_apply_if(const struct Ordered_container* c_ptr, OC_apply_if_fp_t afp)
 }
 
 
-void OC_apply_arg(const struct Ordered_container* c_ptr, OC_apply_arg_fp_t afp, void* arg_ptr)
+void OC_apply_arg(const struct Ordered_container* c_ptr, OC_apply_arg_fp_t afp,
+                  void* arg_ptr)
 {
     struct LL_Node *node_iterator = c_ptr->first;
     while (node_iterator) {
@@ -211,7 +221,8 @@ void OC_apply_arg(const struct Ordered_container* c_ptr, OC_apply_arg_fp_t afp, 
     }
 }
 
-int OC_apply_if_arg(const struct Ordered_container* c_ptr, OC_apply_if_arg_fp_t afp, void* arg_ptr)
+int OC_apply_if_arg(const struct Ordered_container* c_ptr,
+                    OC_apply_if_arg_fp_t afp, void* arg_ptr)
 {
     struct LL_Node *node_iterator = c_ptr->first;
     while (node_iterator) {
@@ -222,13 +233,3 @@ int OC_apply_if_arg(const struct Ordered_container* c_ptr, OC_apply_if_arg_fp_t 
     }
     return 0;
 }
-
-
-
-
-
-
-
-
-
-
