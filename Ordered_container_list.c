@@ -164,9 +164,8 @@ void OC_insert(struct Ordered_container* c_ptr, void* data_ptr)
 void* OC_find_item(const struct Ordered_container* c_ptr, const void* data_ptr)
 {
     struct LL_Node *node_iterator = c_ptr->first;
-    while(1) {
-        if (!node_iterator ||
-            c_ptr->comp_func(data_ptr, node_iterator->data_ptr) < 0)
+    while(node_iterator) {
+        if (c_ptr->comp_func(data_ptr, node_iterator->data_ptr) < 0)
             return NULL;
         if(!c_ptr->comp_func(node_iterator->data_ptr, data_ptr))
             return node_iterator;
@@ -179,8 +178,8 @@ void* OC_find_item_arg(const struct Ordered_container* c_ptr,
                        const void* arg_ptr, OC_find_item_arg_fp_t fafp)
 {
     struct LL_Node *node_iterator = c_ptr->first;
-    while(1) {
-        if (!node_iterator || fafp(arg_ptr, node_iterator->data_ptr) < 0)
+    while(node_iterator) {
+        if (fafp(arg_ptr, node_iterator->data_ptr) < 0)
             return NULL;
         if(!fafp(arg_ptr, node_iterator->data_ptr))
             return node_iterator;

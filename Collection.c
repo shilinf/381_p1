@@ -22,9 +22,7 @@ struct Collection* create_Collection(const char* name)
     /* the deallocation will be done when the function destroy_Collection 
      called.*/
     struct Collection *new_collection = malloc_guard(sizeof(struct Collection));
-    new_collection->name = malloc_guard(strlen(name) + 1);
-    g_string_memory += strlen(name) + 1;
-    strcpy(new_collection->name, name);
+    new_collection->name = string_deep_copy(name);
     new_collection->members = OC_create_container(compare_Record_title);
     return new_collection;
 }
@@ -61,10 +59,7 @@ int add_Collection_member(struct Collection* collection_ptr,
 int is_Collection_member_present(const struct Collection* collection_ptr,
                                  const struct Record* record_ptr)
 {
-    if(OC_find_item(collection_ptr->members, record_ptr))
-        return 1;
-    else
-        return 0;
+    return OC_find_item(collection_ptr->members, record_ptr) ? 1 : 0;
 }
 
 int remove_Collection_member(struct Collection* collection_ptr,

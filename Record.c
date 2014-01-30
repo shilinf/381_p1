@@ -21,12 +21,8 @@ struct Record* create_Record(const char* medium, const char* title)
     struct Record *new_record = malloc_guard(sizeof(struct Record));
     new_record->ID = ++id_number_counter;
     new_record->rating = 0;
-    new_record->title = malloc_guard(strlen(title) + 1);
-    g_string_memory += strlen(title) + 1;
-    strcpy(new_record->title, title);
-    new_record->medium = malloc_guard(strlen(medium) + 1);
-    g_string_memory += strlen(medium) + 1;
-    strcpy(new_record->medium, medium);
+    new_record->title = string_deep_copy(title);
+    new_record->medium = string_deep_copy(medium);
     return new_record;
 }
 

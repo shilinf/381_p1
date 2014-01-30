@@ -26,8 +26,8 @@ struct Ordered_container* OC_create_container(OC_comp_fp_t f_ptr)
 {
     /* the deallocation will be done when the function OC_destroy_container 
      called.*/
-    struct Ordered_container *c_ptr =
-    malloc_guard(sizeof(struct Ordered_container));
+    struct Ordered_container *c_ptr = malloc_guard(sizeof
+                                                   (struct Ordered_container));
     c_ptr->comp_fun = f_ptr;
     OC_initial(c_ptr);
     g_Container_count++;

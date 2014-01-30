@@ -19,6 +19,10 @@ int compare_string_with_Record(const void* arg_ptr, const void* data_ptr);
  Print record to console */
 void print_Record_item (void *data_ptr);
 
+/* malloc a new string, and copy input_string to it.
+ return the pointer to the new string */
+char* string_deep_copy(const char *input_string);
+
 /* check whether malloc succeed */
 void *malloc_guard(size_t memory_size);
 
