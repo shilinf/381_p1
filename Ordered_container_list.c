@@ -168,7 +168,7 @@ void* OC_find_item(const struct Ordered_container* c_ptr, const void* data_ptr)
         if (!node_iterator ||
             c_ptr->comp_func(data_ptr, node_iterator->data_ptr) < 0)
             return NULL;
-        if(c_ptr->comp_func(node_iterator->data_ptr, data_ptr) == 0)
+        if(!c_ptr->comp_func(node_iterator->data_ptr, data_ptr))
             return node_iterator;
         node_iterator = node_iterator->next;
     }
@@ -182,7 +182,7 @@ void* OC_find_item_arg(const struct Ordered_container* c_ptr,
     while(1) {
         if (!node_iterator || fafp(arg_ptr, node_iterator->data_ptr) < 0)
             return NULL;
-        if(fafp(arg_ptr, node_iterator->data_ptr) == 0)
+        if(!fafp(arg_ptr, node_iterator->data_ptr))
             return node_iterator;
         node_iterator = node_iterator->next;
     }

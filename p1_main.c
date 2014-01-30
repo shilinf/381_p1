@@ -320,7 +320,7 @@ void add_Record(void)
     char fmt_str[20];
     sprintf(fmt_str, "%%%ds", RECORD_MEDIUM_SIZE-1);
     scanf(fmt_str, medium);
-    if (read_check_title(title) == 1) {
+    if (read_check_title(title)) {
         void *find_item_ptr = OC_find_item_arg(library_ordered_by_title, title,
                                                compare_string_with_Record);
         if (find_item_ptr)

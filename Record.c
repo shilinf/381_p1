@@ -81,7 +81,7 @@ struct Record* load_Record(FILE* infile)
     if (fscanf(infile, fmt_str, &record_id, medium, &rating) != 3)
         return NULL;
     fgetc(infile); /* read the leading space */
-    if (fgets(title, RECORD_TITLE_SIZE, infile) == NULL) {
+    if (!fgets(title, RECORD_TITLE_SIZE, infile)) {
         return NULL;
     }
     title[strlen(title)-1] = '\0'; /* remove the newline character */

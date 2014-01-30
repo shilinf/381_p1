@@ -24,7 +24,7 @@ void print_Record_item (void *data_ptr)
 void *malloc_guard(size_t memory_size)
 {
     void *new_memory = malloc(memory_size);
-    if (new_memory == NULL) {
+    if (!new_memory) {
         fprintf(stderr, "Memory allocation failed!");
         exit(EXIT_FAILURE);
     }

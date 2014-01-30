@@ -111,14 +111,14 @@ struct Collection* load_Collection(FILE* input_file,
     for (i = 0; i < num_items; i++) {
         char title[RECORD_TITLE_SIZE];
         void *find_item_ptr;
-        if(fgets(title, RECORD_TITLE_SIZE, input_file) == NULL) {
+        if(!fgets(title, RECORD_TITLE_SIZE, input_file)) {
             destroy_Collection(new_collection);
             return NULL;
         }
         title[strlen(title) - 1] = '\0'; /* remove the newline character */
         find_item_ptr = OC_find_item_arg(records, title,
                                          compare_string_with_Record);
-        if (find_item_ptr == NULL) {
+        if (!find_item_ptr) {
             destroy_Collection(new_collection);
             return NULL;
         }
