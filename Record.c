@@ -13,6 +13,7 @@ struct Record {
 	int rating;
 };
 
+/* in file global variable to count id number */
 static int id_number_counter = 0;
 
 struct Record* create_Record(const char* medium, const char* title)

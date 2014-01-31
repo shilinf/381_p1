@@ -132,13 +132,7 @@ void OC_insert(struct Ordered_container* c_ptr, void* data_ptr)
 
 void* OC_find_item(const struct Ordered_container* c_ptr, const void* data_ptr)
 {
-    int insertion_position;
-    int item_position =OC_binary_search(c_ptr, data_ptr, &insertion_position,
-                                        c_ptr->comp_fun);
-    if (item_position == -1)
-        return  NULL;
-    else
-        return c_ptr->array + item_position;
+    return OC_find_item_arg(c_ptr, data_ptr, c_ptr->comp_fun);
 }
 
 void* OC_find_item_arg(const struct Ordered_container* c_ptr,
